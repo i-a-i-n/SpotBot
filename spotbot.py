@@ -5,14 +5,11 @@ from spotify import SpotifyManager
 from songparser import SongParser
 import sys
 
-load_dotenv()
-TOKEN = os.getenv('DISCORD_BOT_TOKEN')
-PLAYLIST_NAME = os.getenv('PLAYLIST_NAME')
-CUSTOM_EMOJI_NAME = os.getenv('CUSTOM_EMOJI_NAME')
 
 class SpotBot(discord.Client):
-
     def __init__(self, **options):
+        PLAYLIST_NAME = os.getenv('PLAYLIST_NAME')
+        self.CUSTOM_EMOJI_NAME = os.getenv('CUSTOM_EMOJI_NAME')
         super().__init__(**options)
         self.sm = SpotifyManager()
         self.sp = SongParser()
@@ -26,9 +23,9 @@ class SpotBot(discord.Client):
         print('Logged on as', self.user)
         # first look through custom emojis to check if CUSTOM_EMOJI_NAME exists
         # eg. i added a custom spotify reaction and set EMOJI = "spotify"
-        if CUSTOM_EMOJI_NAME != '':
+        if self.CUSTOM_EMOJI_NAME != '':
             for emoji in self.emojis:
-                if emoji.name == CUSTOM_EMOJI_NAME:
+                if emoji.name == self.CUSTOM_EMOJI_NAME:
                     self.react_emoji = emoji
                     break
         # default fallback, set EMOJI to thumbs up
@@ -54,5 +51,8 @@ class SpotBot(discord.Client):
             await message.add_reaction(self.react_emoji)
 
 
-client = SpotBot()
-client.run(TOKEN)
+if __name__ == "__main__":
+    load_dotenv()
+    TOKEN = os.getenv('DISCORD_BOT_TOKEN')
+    client = SpotBot()
+    client.run(TOKEN)

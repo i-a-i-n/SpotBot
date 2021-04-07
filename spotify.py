@@ -2,6 +2,8 @@ import spotipy
 import os
 from dotenv import load_dotenv
 from spotipy.oauth2 import SpotifyOAuth
+import datetime
+
 
 class SpotifyManager:
     def __init__(self):
@@ -16,26 +18,40 @@ class SpotifyManager:
         self.user = self.spotify.user(SPOTIFY_USERNAME)
 
     def get_user_playlists(self):
-        return self.spotify.user_playlists(self.user['id'])
+        try:
+            return self.spotify.user_playlists(self.user['id'])
+        except Exception as e:
+            print(f"Exception occurred at {datetime.datetime.now()}:\n{e}")
+            return None
 
     def get_playlist_id(self, playlist_name):
         playlists = self.get_user_playlists()
-        for playlist in playlists['items']:
-            if playlist['name'] == playlist_name:
-                return playlist['id']
+        if playlists:
+            for playlist in playlists['items']:
+                if playlist['name'] == playlist_name:
+                    return playlist['id']
         return None
     
     # super simplistic track search
     def search_for_track(self, title, artist, num_results):
         query = 'track:{} artist:{}'.format(title, artist)
-        results = self.spotify.search(q=query, type="track", limit=num_results)
-        return results
+        try:
+            results = self.spotify.search(q=query, type="track", limit=num_results)
+            return results
+        except Exception as e:
+            print(f"Exception occurred at {datetime.datetime.now()}:\n{e}")
 
     # super simplistic album search
     def search_for_album(self, title, artist, num_results):
         query = 'track:{} artist:{}'.format(title, artist)
-        results = self.spotify.search(q=query, type="album", limit=num_results)
-        return results
+        try:
+            results = self.spotify.search(q=query, type="album", limit=num_results)
+            return results
+        except Exception as e:
+            print(f"Exception occurred at {datetime.datetime.now()}:\n{e}")
 
     def add_songs_to_playlist(self, playlist_id, uris):
-        self.spotify.playlist_add_items(playlist_id, uris)
+        try:
+            self.spotify.playlist_add_items(playlist_id, uris)
+        except Exception as e:
+            print(f"Exception occurred at {datetime.datetime.now()}:\n{e}")
