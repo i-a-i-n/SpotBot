@@ -37,7 +37,9 @@ class SpotBot(discord.Client):
         # get proper Message object
         message = await message.channel.fetch_message(message.id)
         # extract spotify uris from message
-        spotify_uris = self.sp.spotify_uris_from_text(message.content)
+        spotify_tracks, spotify_albums = self.sp.spotify_uris_from_text(message.content)
+        for album in spotify_albums:
+            spotify_tracks.append(self.sm.get_first_song_in_album(album))
         # extract youtube links from message
         youtube_ids = self.sp.youtube_links_from_text(message.content)
         if youtube_ids:
@@ -47,10 +49,10 @@ class SpotBot(discord.Client):
                 except YoutubeError:  # sometimes youtube dl fails, retry five times
                     uri = await self.retry(5, 10, self.sp.get_song_from_youtube_id, id)
                 if uri:
-                    spotify_uris.append(uri)
-        if spotify_uris:  # a match was found on spotify
+                    spotify_tracks.append(uri)
+        if spotify_tracks:  # a match was found on spotify
             # update playlist
-            self.sm.add_songs_to_playlist(self.playlist, spotify_uris)
+            self.sm.add_songs_to_playlist(self.playlist, spotify_tracks)
             # react to message to indicate success
             await message.add_reaction(self.react_emoji)
 

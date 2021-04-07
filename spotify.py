@@ -50,6 +50,14 @@ class SpotifyManager:
         except Exception as e:
             print(f"Exception occurred at {datetime.datetime.now()}:\n{e}")
 
+    def get_first_song_in_album(self, album_id):
+        try:
+            album_tracks = self.spotify.album_tracks(album_id)
+            return album_tracks['items'][0]['id']
+        except Exception as e:
+            print(f"Exception occurred at {datetime.datetime.now()}:\n{e}")
+
+
     def add_songs_to_playlist(self, playlist_id, uris):
         try:
             self.spotify.playlist_add_items(playlist_id, uris)
