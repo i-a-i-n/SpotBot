@@ -15,17 +15,20 @@ class SongParser:
     @staticmethod
     def spotify_uris_from_text(text):
         # look for all instances of a Spotify link or uri in text
-        links = re.findall(r"[\bhttps://open.\b]*spotify[\b.com\b]*[/:]*track[/:]*[A-Za-z0-9?=]+", text)
-        uris = []
-        for link in links:
-            if '.com' in link:  # it's a url
-                endofurl = link.split('/')[-1]
-                uri = endofurl.split('?')[0]
-            else:  # it's a uri or other
-                uri = link.split(':')[-1]
-            if uri:
-                uris.append(uri)
-        return uris
+        track_links = re.findall(r".*open\.spotify\.com\/track\/.*", text)
+        album_links = re.findall(r".*open\.spotify\.com\/album\/.*", text)
+        track_uris = []
+        album_uris = []
+        for link in track_links:
+            endofurl = link.split('/')[-1]
+            uri = endofurl.split('?')[0]
+            track_uris.append(uri)
+
+        for link in album_links:
+            endofurl = link.split('/')[-1]
+            uri = endofurl.split('?')[0]
+            album_uris.append(uri)
+        return track_uris, album_uris
 
     @staticmethod
     def youtube_links_from_text(text):
@@ -59,6 +62,10 @@ class SongParser:
         track_id = self.get_track_id_from_youtube_info(track_name, artist)
         if track_id is not None:
             return track_id
+        # maybe it's an album? This doesn't seem to get hit so should probs work on extracting title + parsing
+        album_id = self.get_album_id_from_youtube_info(track_name, artist)
+        if album_id is not None:
+            return album_id
         return None
 
     # very simplistic search in spotify that just searches full title and takes first result
@@ -67,6 +74,17 @@ class SongParser:
         tracks = results['tracks']['items']
         if len(tracks):  # a match was found
             track_id = tracks[0]['id']  # extract uri
+            print(f"Got uri for {title} by {artist}")
+            return track_id
+        print(f"No result for {title} by {artist}")
+        return None
+
+    # very simplistic search in spotify that just searches full title and takes first result
+    def get_album_id_from_youtube_info(self, title, artist):
+        results = self.sm.search_for_album(title, artist, 1)
+        albums = results['albums']['items']
+        if len(albums):  # a match was found
+            track_id = albums[0]['id']  # extract uri
             print(f"Got uri for {title} by {artist}")
             return track_id
         print(f"No result for {title} by {artist}")
