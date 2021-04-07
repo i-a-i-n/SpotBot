@@ -1,6 +1,12 @@
 from spotify import SpotifyManager
 import youtube_dl
+from youtube_dl import DownloadError
 import re
+
+
+class YoutubeError(DownloadError):
+    pass
+
 
 class SongParser:
     def __init__(self):
@@ -39,18 +45,20 @@ class SongParser:
             video = youtube_dl.YoutubeDL({'quiet': True}).extract_info(
                 link, download=False
             )
+
             artist = video['artist']
             track_name = video['track']
 
-        except:
-            # silently fails if video is not music related, or can't extract artist and track name
-            return None
+        except (DownloadError, KeyError) as e:
+            if isinstance(e, KeyError):
+                # silently fails if video is not music related, or can't extract artist and track name
+                return None
+            raise DownloadError
         
         # look for track name and artist in spotify
         track_id = self.get_track_id_from_youtube_info(track_name, artist)
         if track_id is not None:
             return track_id
-        print(f"No song found for video: {link}")
         return None
 
     # very simplistic search in spotify that just searches full title and takes first result
@@ -59,6 +67,7 @@ class SongParser:
         tracks = results['tracks']['items']
         if len(tracks):  # a match was found
             track_id = tracks[0]['id']  # extract uri
-            print("Got TrackID")
+            print(f"Got uri for {title} by {artist}")
             return track_id
+        print(f"No result for {title} by {artist}")
         return None
