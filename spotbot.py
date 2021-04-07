@@ -2,8 +2,9 @@ import os
 import discord
 from dotenv import load_dotenv
 from spotify import SpotifyManager
-from songparser import SongParser
+from songparser import SongParser, YoutubeError
 import sys
+import asyncio
 
 
 class SpotBot(discord.Client):
@@ -41,7 +42,10 @@ class SpotBot(discord.Client):
         youtube_ids = self.sp.youtube_links_from_text(message.content)
         if youtube_ids:
             for id in youtube_ids:
-                uri = self.sp.get_song_from_youtube_id(id)  # convert link to a spotify uri
+                try:
+                    uri = self.sp.get_song_from_youtube_id(id)
+                except YoutubeError:  # sometimes youtube dl fails, retry five times
+                    uri = await self.retry(5, 10, self.sp.get_song_from_youtube_id, id)
                 if uri:
                     spotify_uris.append(uri)
         if spotify_uris:  # a match was found on spotify
@@ -50,6 +54,15 @@ class SpotBot(discord.Client):
             # react to message to indicate success
             await message.add_reaction(self.react_emoji)
 
+    async def retry(self, num_tries, wait, function,  *args):
+        for i in range(num_tries):
+            await asyncio.sleep(wait)
+            try:
+                result = function(args)
+                return result
+            except Exception as e:
+                print(f"{function} attempt {i+1} failed, Exception: {e}")
+        return None
 
 if __name__ == "__main__":
     load_dotenv()
