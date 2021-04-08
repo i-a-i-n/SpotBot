@@ -42,6 +42,8 @@ class SpotBot(discord.Client):
             spotify_tracks.append(self.sm.get_first_song_in_album(album))
         # extract youtube links from message
         youtube_ids = self.sp.youtube_links_from_text(message.content)
+        # extract bandcamp links from message
+        bandcamp_links = self.sp.bandcamp_links_from_text(message.content)
         if youtube_ids:
             for id in youtube_ids:
                 try:
@@ -50,6 +52,10 @@ class SpotBot(discord.Client):
                     uri = await self.retry(5, 10, self.sp.get_song_from_youtube_id, id)
                 if uri:
                     spotify_tracks.append(uri)
+        for link in bandcamp_links:
+            id = self.sp.get_song_from_bandcamp_link(link)
+            if id is not None:
+                spotify_tracks.append(id)
         if spotify_tracks:  # a match was found on spotify
             # update playlist
             self.sm.add_songs_to_playlist(self.playlist, spotify_tracks)
