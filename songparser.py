@@ -2,7 +2,7 @@ from spotify import SpotifyManager
 import youtube_dl
 from youtube_dl import DownloadError
 import re
-
+from bandcamp import Bandcamp
 
 class YoutubeError(DownloadError):
     pass
@@ -11,6 +11,7 @@ class YoutubeError(DownloadError):
 class SongParser:
     def __init__(self):
         self.sm = SpotifyManager()
+        self.bc = Bandcamp()
 
     @staticmethod
     def spotify_uris_from_text(text):
@@ -31,6 +32,10 @@ class SongParser:
         return track_uris, album_uris
 
     @staticmethod
+    def bandcamp_links_from_text(text):
+        return re.findall(r"https:\/\/\S*bandcamp\.com\/\S*\/\S*", text)
+
+    @staticmethod
     def youtube_links_from_text(text):
         # look for all youtube links in text
         regex = re.compile(
@@ -40,6 +45,12 @@ class SongParser:
             links = [link[5] for link in match]  # extract video id
             return links
         return None
+
+    def get_song_from_bandcamp_link(self, link):
+        album = self.bc.parse(link)
+        title = album['title']
+        artist = album['artist']
+        return self.get_track_id_from_title_and_artist(title, artist)
 
     def get_song_from_youtube_id(self, id):
         # append id to youtube base link
@@ -59,7 +70,7 @@ class SongParser:
             raise DownloadError
         
         # look for track name and artist in spotify
-        track_id = self.get_track_id_from_youtube_info(track_name, artist)
+        track_id = self.get_track_id_from_title_and_artist(track_name, artist)
         if track_id is not None:
             return track_id
         # maybe it's an album? This doesn't seem to get hit so should probs work on extracting title + parsing
@@ -69,7 +80,7 @@ class SongParser:
         return None
 
     # very simplistic search in spotify that just searches full title and takes first result
-    def get_track_id_from_youtube_info(self, title, artist):
+    def get_track_id_from_title_and_artist(self, title, artist):
         results = self.sm.search_for_track(title, artist, 1)
         tracks = results['tracks']['items']
         if len(tracks):  # a match was found

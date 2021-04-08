@@ -57,7 +57,6 @@ class SpotifyManager:
         except Exception as e:
             print(f"Exception occurred at {datetime.datetime.now()}:\n{e}")
 
-
     def add_songs_to_playlist(self, playlist_id, uris):
         try:
             self.spotify.playlist_add_items(playlist_id, uris)
